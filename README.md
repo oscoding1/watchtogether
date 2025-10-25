@@ -35,7 +35,7 @@ A full-stack web application that allows multiple users to video call and watch 
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/oscoding1/watchtogether.git
    cd watchtogether
 
 
