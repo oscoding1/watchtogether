@@ -53,6 +53,46 @@ const App = () => {
     return () => newSocket.close();
   }, []);
 
+  // Add this useEffect after your socket initialization
+useEffect(() => {
+  if (!socket) return;
+
+  // Connection event handlers
+  socket.on('connect', () => {
+    console.log('✅ Connected to server');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Disconnected from server');
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('🚨 Connection error:', error);
+  });
+
+  socket.on('room-error', (error) => {
+    console.error('🚨 Room error:', error);
+    alert(`Room error: ${error.message}`);
+  });
+
+  // Add users-updated event
+  socket.on('users-updated', (users) => {
+    console.log('👥 Users updated:', users);
+    setRoomUsers(users);
+  });
+
+  // Ping the server every 30 seconds to keep connection alive
+  const pingInterval = setInterval(() => {
+    if (socket.connected) {
+      socket.emit('ping');
+    }
+  }, 30000);
+
+  return () => {
+    clearInterval(pingInterval);
+  };
+}, [socket]);
+
   // Socket event listeners
   useEffect(() => {
     if (!socket) return;
@@ -276,13 +316,32 @@ const App = () => {
     setDuration(duration);
   };
 
-  const changeVideo = (url, type) => {
-    if (!isHost) return;
-    
-    socket.emit('change-video', { url, type });
-    setVideoUrl(url);
-    setVideoType(type);
-  };
+  const changeVideo = (url, type = '') => {
+  if (!isHost) {
+    alert('Only the host can change the video');
+    return;
+  }
+
+  if (!url.trim()) {
+    alert('Please enter a video URL');
+    return;
+  }
+
+  // Auto-detect video type if not provided
+  let detectedType = type;
+  if (!type) {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      detectedType = 'youtube';
+    } else if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg')) {
+      detectedType = 'upload';
+    } else {
+      detectedType = 'upload'; // default
+    }
+  }
+
+  console.log('🎬 Changing video:', url, detectedType);
+  socket.emit('change-video', { url: url.trim(), type: detectedType });
+};
 
   // Chat functions
   const sendMessage = () => {
